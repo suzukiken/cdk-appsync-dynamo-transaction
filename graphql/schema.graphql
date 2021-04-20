@@ -1,0 +1,29 @@
+type Stock {
+  id: ID!
+  sku: String!
+  pcs: Int!
+}
+type Query {
+  listStocks: [ Stock ]
+}
+input AdjustPcsInput {
+  id: ID!
+  delta: Int!
+  increment: Boolean!
+}
+type Reason {
+  type: String
+  message: String
+}
+type Key {
+  id: ID!
+}
+type TransactionResult {
+  keys: [ Key ]
+  cancellationReasons: [ Reason ]
+}
+type Mutation {
+  addStock(sku: String!): Stock
+  adjustPcs(id: ID!, delta: Int!, increment: Boolean!): Stock
+  adjustPcsTransaction(input: [ AdjustPcsInput! ]!): TransactionResult
+}

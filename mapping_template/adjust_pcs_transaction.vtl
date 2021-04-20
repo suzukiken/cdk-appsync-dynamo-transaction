@@ -1,0 +1,50 @@
+#set($items = [])
+
+#foreach($row in ${ctx.args.input})
+
+  #if( $row.delta <= 0 )
+    $util.error("delta must be bigger than zero")
+  #end
+  
+  #set($update = {})
+  
+  #if( $row.increment )
+    $util.qr($update.put( "expression", "SET pcs = pcs + :delta" ))
+  #else
+    $util.qr($update.put( "expression", "SET pcs = pcs - :delta" ))
+  #end
+  
+  #set( $expressionValues = {} )
+  $util.qr($expressionValues.put( ":delta", $util.dynamodb.toNumber($row.delta) ))
+  $util.qr($update.put( "expressionValues", $expressionValues ))
+  
+  #set( $key = {} )
+  $util.qr($key.put( "id", $util.dynamodb.toString($row.id) ) )
+  
+  #set( $condition = {} )
+  $util.qr($condition.put( "expression", "pcs >= :delta" ) )
+  #set( $expressionValues = {} )
+  $util.qr($expressionValues.put( ":delta", $util.dynamodb.toNumber($row.delta) ))
+  $util.qr($condition.put( "expressionValues", $expressionValues ))
+  
+  #set( $item = {} )
+  $util.qr($item.put( "table", "cdkappsyncdynamotransactionProduct" ) )
+  $util.qr($item.put( "operation", "UpdateItem" ) )
+  $util.qr($item.put( "key", $key ) )
+  $util.qr($item.put( "update", $update ) )
+  
+  #if( !$row.increment )
+    $util.qr($item.put( "condition", $condition ))
+  #end
+  
+  $util.qr($items.add($item))
+#end
+
+#set($transactItems = [])
+$util.qr($transactItems.addAll($items))
+
+{
+  "version" : "2018-05-29",
+  "operation" : "TransactWriteItems",
+  "transactItems" : $util.toJson($transactItems)
+}

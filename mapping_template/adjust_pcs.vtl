@@ -1,0 +1,32 @@
+#if( $context.arguments.delta <= 0 )
+  $util.error("delta must be bigger than zero")
+#end
+
+#if( $context.arguments.increment )
+  #set( $expression = "SET pcs = pcs + :delta" )
+#else
+  #set( $expression = "SET pcs = pcs - :delta" )
+#end
+
+{
+  "version" : "2017-02-28",
+  "operation" : "UpdateItem",
+  "key" : {
+    "id" : $util.dynamodb.toDynamoDBJson($context.arguments.id)
+  },
+  "update" : {
+    "expression" : "$expression",
+    "expressionValues": {
+      ":delta" : $util.dynamodb.toDynamoDBJson($context.arguments.delta)
+    }
+  }
+  #if( !$context.arguments.increment )
+    ,
+    "condition" : {
+      "expression" : "pcs >= :delta",
+      "expressionValues" : {
+        ":delta" : $util.dynamodb.toDynamoDBJson($context.arguments.delta),
+      }
+    }
+  #end
+}
